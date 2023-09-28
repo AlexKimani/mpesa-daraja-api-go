@@ -1,0 +1,45 @@
+version: '3.9'
+services:
+  service-mysql:
+    image: mysql:8.0.34-debian
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=mpesa-daraja
+      - MYSQL_ROOT_PASSWORD=38ur900hsuurpwmrt
+      - MYSQL_USER=daraja
+      - MYSQL_PASSWORD=38ur900hsuurpwmrt
+    ports:
+      - '3308:3306'
+    volumes:
+      - daraja:/var/lib/mysql
+  daraja-service:
+    image: daraja-service:latest
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+      cache_from:
+        - golang:1.18
+        - scratch
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./:/datadir/"
+    depends_on:
+      - service-mysql
+    environment:
+      - CONFIG_FILE_PATH=/app/config/config.yaml
+      - LOG_FILE_PATH=/tmp/daraja
+      - MAX_LOG_FILE_SIZE=10
+      - MAX_FILE_BACKUPS=10
+      - MAX_FILE_AGE=30
+      - COMPRESS_TO_ZIP=true
+    external_links:
+      - service-mysql
+    restart: on-failure
+  # Names our volume
+volumes:
+  cache:
+    driver: local
+  daraja-service:
+  daraja:
