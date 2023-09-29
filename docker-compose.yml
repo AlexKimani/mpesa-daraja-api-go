@@ -19,8 +19,7 @@ services:
       context: .
       dockerfile: Dockerfile
       cache_from:
-        - golang:1.18
-        - scratch
+        - golang:1.21.1
     ports:
       - "8000:8000"
     volumes:
