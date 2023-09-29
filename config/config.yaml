@@ -9,7 +9,7 @@ server:
 database:
   connectionName: mpesa-daraja-connection
   driver: mysql
-  host: 127.0.0.1
+  host: service-mysql
   port: 3306
   name: mpesa-daraja
   user: daraja
@@ -18,3 +18,4 @@ database:
   maxOpenConnections: 20
   maxIdleTime: 30
   maxLifeTime: 30
+  migrationsPath: /app/migrations

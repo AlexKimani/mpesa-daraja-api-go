@@ -39,9 +39,9 @@ func SetupLogger(logFilePath string) {
 	// Fork writing into two outputs
 	multiWriter := io.MultiWriter(os.Stderr, lumberjackLogger)
 
-	logFormatter := new(log.TextFormatter)       // you can also use log.JSONFormatter{} to allow log analysis
+	logFormatter := new(log.JSONFormatter)       // you can also use log.JSONFormatter{} to allow log analysis
 	logFormatter.TimestampFormat = time.RFC1123Z // writes in this format: "Mon, 02 Jan 2006 15:04:05 -0700"
-	logFormatter.FullTimestamp = true
+	logFormatter.PrettyPrint = true
 
 	log.SetFormatter(logFormatter)
 	log.SetOutput(multiWriter)

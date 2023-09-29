@@ -2,13 +2,16 @@ package config
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 )
@@ -61,6 +64,8 @@ type Config struct {
 		MaxIdleTime int `yaml:"maxIdleTime"`
 		// Maximum Life Time
 		MaxLifeTime int `yaml:"maxLifeTime"`
+		// Migrations Location
+		MigrationsPath string `yaml:"migrationsPath"`
 	} `yaml:"database"`
 }
 
@@ -128,6 +133,21 @@ func NewRouter() *http.ServeMux {
 	return router
 }
 
+// GenerateDatabaseDsn creates a database DSN URI
+func GenerateDatabaseDsn(config Config) string {
+	cfg := &mysql.Config{
+		User:            config.Database.User,
+		Passwd:          config.Database.Password,
+		Net:             "tcp",
+		Addr:            config.Database.Host + ":" + strconv.Itoa(config.Database.Port),
+		DBName:          config.Database.Name,
+		MultiStatements: true,
+		ParseTime:       true,
+	}
+	log.Infof("Formatted Database DSN; %s", cfg.FormatDSN())
+	return cfg.FormatDSN()
+}
+
 // Run will start the HTTP Server and initiate connection pool
 func (configuration Config) Run() {
 	// Set up a channel to listen to for interrupt signals
@@ -153,13 +173,35 @@ func (configuration Config) Run() {
 	// Handle ctrl+c/ctrl+x interrupt
 	signal.Notify(runChannel, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
+	time.Sleep(time.Second * 10)
+
 	// Alert the user that the server is starting
 	log.Infof("Server is starting on %s", server.Addr)
 
+	_ = GenerateDatabaseDsn(configuration)
+
 	// Call DB Connection pool start
-	_, err := DatabaseConnectionPool(configuration)
+	db, err := DatabaseConnectionPool(configuration)
 	if err != nil {
 		log.Fatalf("Unable to initialize database connection pool due to error: %+v", err)
+		// Send kill command to close server as DB is not available
+		runChannel <- syscall.SIGINT
+	}
+
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(db)
+
+	// Alert the user that the Database migrations are starting
+	log.Info("Initializing Database Migrations")
+
+	// Call DB Migrations
+	err = RunDatabaseMigrations(db, configuration)
+	if err != nil {
+		log.Fatalf("Unable to initialize database migrations due to error: %+v", err)
 		// Send kill command to close server as DB is not available
 		runChannel <- syscall.SIGINT
 	}
