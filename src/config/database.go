@@ -1,6 +1,7 @@
 package config
 
 import (
+	"database/sql"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -9,7 +10,7 @@ import (
 )
 
 // DatabaseConnectionPool initialize the Database connection pool and setup a pool of connections
-func DatabaseConnectionPool(config Config) (bool, error) {
+func DatabaseConnectionPool(config Config) (*sql.DB, error) {
 	log.Info("Initializing Database Connection Pool")
 
 	dbName := config.Database.Name
@@ -17,7 +18,7 @@ func DatabaseConnectionPool(config Config) (bool, error) {
 	dbPassword := config.Database.Password
 	dbPort := strconv.Itoa(config.Database.Port)
 	// Create DB Connection string
-	dbDsn := dbUser + ":" + dbPassword + "@tcp(" + config.Database.Host + ":" + dbPort + ")/" + dbName + "?charset=utf8mb4&parseTime=True"
+	dbDsn := dbUser + ":" + dbPassword + "@tcp(" + config.Database.Host + ":" + dbPort + ")/" + dbName + "?charset=utf8mb4&parseTime=True&multiStatements=true"
 	db, err := gorm.Open(mysql.New(mysql.Config{
 		DriverName: config.Database.Driver,
 		DSN:        dbDsn,
@@ -34,6 +35,11 @@ func DatabaseConnectionPool(config Config) (bool, error) {
 	sqlDb.SetMaxOpenConns(dbMaxOpenConnections)
 	sqlDb.SetConnMaxIdleTime(time.Duration(dbMaxIdleTime))
 
+	if err != nil {
+		log.Errorf("DatabaseConnectionPool Error: %+v", err)
+		return nil, err
+	}
+
 	// This is for analyzing the stats after setting a connection
 	log.Info("@OnboardingConnectionPool MYSQL MAX Open Connections: ",
 		sqlDb.Stats().MaxOpenConnections)
@@ -42,9 +48,5 @@ func DatabaseConnectionPool(config Config) (bool, error) {
 	log.Info("@DatabaseConnectionPool MYSQL InUse Connections: ",
 		sqlDb.Stats().InUse)
 	log.Info("@DatabaseConnectionPool MYSQL Idle Connections: ", sqlDb.Stats().Idle)
-	if err != nil {
-		log.Errorf("DatabaseConnectionPool Error: %+v", err)
-		return false, err
-	}
-	return true, nil
+	return sqlDb, nil
 }
