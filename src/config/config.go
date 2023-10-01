@@ -5,16 +5,19 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
+	service "mpesa-daraja-api-go/src/database/service/impl"
+	"mpesa-daraja-api-go/src/rest/controllers"
+	"mpesa-daraja-api-go/src/rest/facade/impl"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 )
+
+var InitiatorApp *controllers.InitiatorApp
 
 type Config struct {
 	Server struct {
@@ -64,8 +67,12 @@ type Config struct {
 		MaxIdleTime int `yaml:"maxIdleTime"`
 		// Maximum Life Time
 		MaxLifeTime int `yaml:"maxLifeTime"`
+		// Maximum batch size
+		BatchSize int `yaml:"batchSize"`
 		// Migrations Location
 		MigrationsPath string `yaml:"migrationsPath"`
+		// Generate Database Structs
+		GenerateStructs bool `yaml:"generateStructs"`
 	} `yaml:"database"`
 }
 
@@ -125,27 +132,16 @@ func ParseFlags() (string, error) {
 
 // NewRouter generates the router used in the HTTP Server
 func NewRouter() *http.ServeMux {
+	InitiatorApp := controllers.InitiatorApp{
+		InitiatorFacade: impl.ApiInitiatorFacade(service.NewDatabaseInitiatorService(Instance)),
+	}
 	// Create a router and define routes and return that router
 	router := http.NewServeMux()
 
 	//Add routes here
+	router.HandleFunc("/initiator", controllers.CreateInitiatorHandler)
 
 	return router
-}
-
-// GenerateDatabaseDsn creates a database DSN URI
-func GenerateDatabaseDsn(config Config) string {
-	cfg := &mysql.Config{
-		User:            config.Database.User,
-		Passwd:          config.Database.Password,
-		Net:             "tcp",
-		Addr:            config.Database.Host + ":" + strconv.Itoa(config.Database.Port),
-		DBName:          config.Database.Name,
-		MultiStatements: true,
-		ParseTime:       true,
-	}
-	log.Infof("Formatted Database DSN; %s", cfg.FormatDSN())
-	return cfg.FormatDSN()
 }
 
 // Run will start the HTTP Server and initiate connection pool
@@ -160,25 +156,8 @@ func (configuration Config) Run() {
 		time.Duration(configuration.Server.Timeout.Server),
 	)
 	defer cancel()
-
-	// Define server options
-	server := &http.Server{
-		Addr:         configuration.Server.Host + ":" + configuration.Server.Port,
-		Handler:      NewRouter(),
-		ReadTimeout:  time.Duration(configuration.Server.Timeout.Read) * time.Second,
-		WriteTimeout: time.Duration(configuration.Server.Timeout.Write) * time.Second,
-		IdleTimeout:  time.Duration(configuration.Server.Timeout.Idle) * time.Second,
-	}
-
-	// Handle ctrl+c/ctrl+x interrupt
-	signal.Notify(runChannel, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-
-	time.Sleep(time.Second * 10)
-
-	// Alert the user that the server is starting
-	log.Infof("Server is starting on %s", server.Addr)
-
-	_ = GenerateDatabaseDsn(configuration)
+	// delay system start-up to allow mysql to initialize
+	time.Sleep(time.Second * 5)
 
 	// Call DB Connection pool start
 	db, err := DatabaseConnectionPool(configuration)
@@ -205,6 +184,37 @@ func (configuration Config) Run() {
 		// Send kill command to close server as DB is not available
 		runChannel <- syscall.SIGINT
 	}
+
+	// Check if system should generate database structs
+	if configuration.Database.GenerateStructs == true {
+		err := GenerateDatabaseStructs(configuration)
+		if err != nil {
+			log.Fatalf("Failed to generate structs due to %+v\nSystem will reboot", err)
+			runChannel <- syscall.SIGINT
+		}
+	}
+
+	err = ConnectToDatabase(configuration)
+	if err != nil {
+		log.Fatalf("Unable to initialize database connection pool due to error: %+v", err)
+		// Send kill command to close server as DB is not available
+		runChannel <- syscall.SIGINT
+	}
+
+	// Define server options
+	server := &http.Server{
+		Addr:         configuration.Server.Host + ":" + configuration.Server.Port,
+		Handler:      NewRouter(),
+		ReadTimeout:  time.Duration(configuration.Server.Timeout.Read) * time.Second,
+		WriteTimeout: time.Duration(configuration.Server.Timeout.Write) * time.Second,
+		IdleTimeout:  time.Duration(configuration.Server.Timeout.Idle) * time.Second,
+	}
+
+	// Handle ctrl+c/ctrl+x interrupt
+	signal.Notify(runChannel, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	// Alert the user that the server is starting
+	log.Infof("Server is starting on %s", server.Addr)
 
 	// run the server on a new goroutine
 	go func() {
