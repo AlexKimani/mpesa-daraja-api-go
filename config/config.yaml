@@ -18,4 +18,6 @@ database:
   maxOpenConnections: 20
   maxIdleTime: 30
   maxLifeTime: 30
+  batchSize: 1000
   migrationsPath: /app/migrations
+  generateStructs: true
