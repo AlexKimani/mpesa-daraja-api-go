@@ -14,3 +14,20 @@ type MpesaExpressRequest struct {
 	AccountReference         string `json:"AccountReference"`
 	TransactionDesc          string `json:"TransactionDesc"`
 }
+
+func NewMpesaExpressRequest(request MpesaExpressRequest) MpesaExpressRequest {
+	return MpesaExpressRequest{
+		OriginatorConversationID: request.OriginatorConversationID,
+		BusinessShortCode:        request.BusinessShortCode,
+		Password:                 request.Password,
+		Timestamp:                request.Timestamp,
+		TransactionType:          request.TransactionType,
+		Amount:                   request.Amount,
+		PartyA:                   request.PartyA,
+		PartyB:                   request.PartyB,
+		PhoneNumber:              request.PhoneNumber,
+		CallBackURL:              request.CallBackURL,
+		AccountReference:         request.AccountReference,
+		TransactionDesc:          request.TransactionDesc,
+	}
+}

@@ -13,3 +13,19 @@ type TransactionStatusRequest struct {
 	Remarks                  string `json:"Remarks"`
 	Occasion                 string `json:"Occasion"`
 }
+
+func NewTransactionStatusRequest(request TransactionStatusRequest) TransactionStatusRequest {
+	return TransactionStatusRequest{
+		Initiator:                request.Initiator,
+		SecurityCredential:       request.SecurityCredential,
+		CommandID:                request.CommandID,
+		TransactionID:            request.TransactionID,
+		OriginatorConversationID: request.OriginatorConversationID,
+		PartyA:                   request.PartyA,
+		IdentifierType:           request.IdentifierType,
+		ResultURL:                request.ResultURL,
+		QueueTimeOutURL:          request.QueueTimeOutURL,
+		Remarks:                  request.Remarks,
+		Occasion:                 request.Occasion,
+	}
+}

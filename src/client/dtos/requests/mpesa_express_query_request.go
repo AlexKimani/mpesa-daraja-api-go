@@ -7,3 +7,13 @@ type MpesaExpressQueryRequest struct {
 	Timestamp                string `json:"Timestamp"`
 	CheckoutRequestID        string `json:"CheckoutRequestID"`
 }
+
+func NewMpesaExpressQueryRequest(request MpesaExpressQueryRequest) MpesaExpressQueryRequest {
+	return MpesaExpressQueryRequest{
+		OriginatorConversationID: request.OriginatorConversationID,
+		BusinessShortCode:        request.BusinessShortCode,
+		Password:                 request.Password,
+		Timestamp:                request.Timestamp,
+		CheckoutRequestID:        request.CheckoutRequestID,
+	}
+}

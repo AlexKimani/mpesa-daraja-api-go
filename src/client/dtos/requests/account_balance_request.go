@@ -11,3 +11,17 @@ type AccountBalanceRequest struct {
 	QueueTimeOutURL          string `json:"QueueTimeOutURL"`
 	ResultURL                string `json:"ResultURL"`
 }
+
+func NewAccountBalanceRequest(request AccountBalanceRequest) AccountBalanceRequest {
+	return AccountBalanceRequest{
+		OriginatorConversationID: request.OriginatorConversationID,
+		Initiator:                request.Initiator,
+		SecurityCredential:       request.SecurityCredential,
+		CommandID:                request.CommandID,
+		PartyA:                   request.PartyA,
+		IdentifierType:           request.IdentifierType,
+		Remarks:                  request.Remarks,
+		QueueTimeOutURL:          request.QueueTimeOutURL,
+		ResultURL:                request.ResultURL,
+	}
+}
