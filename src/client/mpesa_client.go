@@ -142,7 +142,7 @@ func MpesaExpressQueryRequest(config configs.Config, request requests.MpesaExpre
 	}
 	client := configs.NewRetryableClient(config)
 	var authToken = "Bearer " + token
-	var url = config.Mpesa.BaseUrl + config.Mpesa.Urls.Express
+	var url = config.Mpesa.BaseUrl + config.Mpesa.Urls.ExpressQuery
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(request)
 	if err != nil {
