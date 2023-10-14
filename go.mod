@@ -20,6 +20,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/rubenv/sql-migrate v1.5.2 // indirect
+	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect

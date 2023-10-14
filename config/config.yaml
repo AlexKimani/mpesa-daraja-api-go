@@ -21,3 +21,19 @@ database:
   batchSize: 1000
   migrationsPath: /app/migrations
   generateStructs: true
+mpesa:
+  baseUrl: https://sandbox.safaricom.co.ke
+  consumerKey:
+  consumerSecret:
+  urls:
+    auth: /oauth/v1/generate?grant_type=client_credentials
+    express: /mpesa/stkpush/v1/processrequest
+    expressQuery: /mpesa/stkpushquery/v1/query
+    c2bRegisterUrl: /mpesa/c2b/v1/registerurl
+    b2c: /mpesa/b2c/v3/paymentrequest
+    transactionStatus: /mpesa/transactionstatus/v1/query
+    accountBalance: /mpesa/accountbalance/v1/query
+    reversal: /mpesa/reversal/v1/request
+    taxRemittance: /mpesa/b2b/v1/remittax
+    businessPayBill: /mpesa/b2b/v1/paymentrequest
+    businessBuyGoods: /mpesa/b2b/v1/paymentrequest

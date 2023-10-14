@@ -74,6 +74,25 @@ type Config struct {
 		// Generate Database Structs
 		GenerateStructs bool `yaml:"generateStructs"`
 	} `yaml:"database"`
+
+	Mpesa struct {
+		BaseUrl        string `yaml:"baseUrl"`
+		ConsumerKey    string `yaml:"consumerKey"`
+		ConsumerSecret string `yaml:"consumerSecret"`
+		Urls           struct {
+			Auth              string `yaml:"auth"`
+			Express           string `yaml:"express"`
+			ExpressQuery      string `yaml:"expressQuery"`
+			C2bRegisterUrl    string `yaml:"c2bRegisterUrl"`
+			B2c               string `yaml:"b2c"`
+			TransactionStatus string `yaml:"transactionStatus"`
+			AccountBalance    string `yaml:"accountBalance"`
+			Reversal          string `yaml:"reversal"`
+			TaxRemittance     string `yaml:"taxRemittance"`
+			BusinessPayBill   string `yaml:"businessPayBill"`
+			BusinessBuyGoods  string `yaml:"businessBuyGoods"`
+		} `yaml:"urls"`
+	} `yaml:"mpesa"`
 }
 
 // GetConfigurations Gets config values from YAML file and adds them to a Config Struct
