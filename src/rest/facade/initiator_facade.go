@@ -6,11 +6,9 @@ import (
 )
 
 type InitiatorFacade interface {
-	CreateInitiator(request request.InitiatorRequest) *response.ApiResponse
-
+	SaveInitiator(request *request.InitiatorRequest) (*response.ApiResponse, error)
 	GetAllInitiators() *response.ApiResponse
-
 	GetInitiatorById(id int64) *response.ApiResponse
-
-	UpdateInitiator(id int64, initiatorRequest request.InitiatorRequest) *response.ApiResponse
+	GetInitiatorByName(initiatorName string) *response.ApiResponse
+	UpdateInitiator(id int64, initiatorRequest *request.InitiatorRequest) (*response.ApiResponse, error)
 }
