@@ -31,5 +31,3 @@ build/
 .vscode/
 
 *.gen.go
-
-docs/
