@@ -1,23 +1,11 @@
 package config
 
 import (
-	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
-	service "mpesa-daraja-api-go/src/database/service/impl"
-	"mpesa-daraja-api-go/src/rest/controllers"
-	"mpesa-daraja-api-go/src/rest/facade/impl"
-	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
-
-var InitiatorApp *controllers.InitiatorApp
 
 type Config struct {
 	Server struct {
@@ -147,113 +135,4 @@ func ParseFlags() (string, error) {
 
 	// Return the configuration path
 	return configPath, nil
-}
-
-// NewRouter generates the router used in the HTTP Server
-func NewRouter() *http.ServeMux {
-	InitiatorApp := controllers.InitiatorApp{
-		InitiatorFacade: impl.ApiInitiatorFacade(service.NewDatabaseInitiatorService(Instance)),
-	}
-	// Create a router and define routes and return that router
-	router := http.NewServeMux()
-
-	//Add routes here
-	router.HandleFunc("/initiator", controllers.CreateInitiatorHandler)
-
-	return router
-}
-
-// Run will start the HTTP Server and initiate connection pool
-func (configuration Config) Run() {
-	// Set up a channel to listen to for interrupt signals
-	var runChannel = make(chan os.Signal, 1)
-
-	// Set up a context to allow for graceful server shutdowns in the event
-	// of an OS interrupt (defers the cancel just in case)
-	ctx, cancel := context.WithTimeout(
-		context.Background(),
-		time.Duration(configuration.Server.Timeout.Server),
-	)
-	defer cancel()
-	// delay system start-up to allow mysql to initialize
-	time.Sleep(time.Second * 5)
-
-	// Call DB Connection pool start
-	db, err := DatabaseConnectionPool(configuration)
-	if err != nil {
-		log.Fatalf("Unable to initialize database connection pool due to error: %+v", err)
-		// Send kill command to close server as DB is not available
-		runChannel <- syscall.SIGINT
-	}
-
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(db)
-
-	// Alert the user that the Database migrations are starting
-	log.Info("Initializing Database Migrations")
-
-	// Call DB Migrations
-	err = RunDatabaseMigrations(db, configuration)
-	if err != nil {
-		log.Fatalf("Unable to initialize database migrations due to error: %+v", err)
-		// Send kill command to close server as DB is not available
-		runChannel <- syscall.SIGINT
-	}
-
-	// Check if system should generate database structs
-	if configuration.Database.GenerateStructs == true {
-		err := GenerateDatabaseStructs(configuration)
-		if err != nil {
-			log.Fatalf("Failed to generate structs due to %+v\nSystem will reboot", err)
-			runChannel <- syscall.SIGINT
-		}
-	}
-
-	err = ConnectToDatabase(configuration)
-	if err != nil {
-		log.Fatalf("Unable to initialize database connection pool due to error: %+v", err)
-		// Send kill command to close server as DB is not available
-		runChannel <- syscall.SIGINT
-	}
-
-	// Define server options
-	server := &http.Server{
-		Addr:         configuration.Server.Host + ":" + configuration.Server.Port,
-		Handler:      NewRouter(),
-		ReadTimeout:  time.Duration(configuration.Server.Timeout.Read) * time.Second,
-		WriteTimeout: time.Duration(configuration.Server.Timeout.Write) * time.Second,
-		IdleTimeout:  time.Duration(configuration.Server.Timeout.Idle) * time.Second,
-	}
-
-	// Handle ctrl+c/ctrl+x interrupt
-	signal.Notify(runChannel, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-
-	// Alert the user that the server is starting
-	log.Infof("Server is starting on %s", server.Addr)
-
-	// run the server on a new goroutine
-	go func() {
-		if err := server.ListenAndServe(); err != nil {
-			if errors.Is(err, http.ErrServerClosed) {
-				// Normal interrupt operation, ignore
-			} else {
-				log.Fatalf("Server failed to start due to error %v", err)
-			}
-		}
-	}()
-
-	// Block on this channel listeninf for those previously defined syscalls assign
-	// to variable, so we can let the user know why the server is shutting down
-	interrupt := <-runChannel
-
-	// If we get one of the pre-prescribed syscalls, gracefully terminate the server
-	// while alerting the user
-	log.Infof("Server is shutting down due to %+v", interrupt)
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server was unable to gracefully shutdown due to err: %+v", err)
-	}
 }

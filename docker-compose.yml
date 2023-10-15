@@ -21,7 +21,7 @@ services:
       cache_from:
         - golang:1.21.1
     ports:
-      - "8000:8000"
+      - "8080:8080"
     volumes:
       - "./:/datadir/"
     depends_on:

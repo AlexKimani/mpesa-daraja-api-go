@@ -7,6 +7,8 @@ COPY go.mod go.sum ./
 
 RUN go mod download
 
+RUN swag init
+
 COPY src/ ./src
 COPY *.go ./
 
@@ -19,7 +21,8 @@ COPY --from=builder /mpesa-daraja-api /mpesa-daraja-api
 WORKDIR /app
 COPY migrations ./migrations
 COPY config ./config
+COPY docs ./docs
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD ["/mpesa-daraja-api"]

@@ -31,10 +31,5 @@ build/
 .vscode/
 
 *.gen.go
-/src/database/interfaces/business_buy_goods.gen.go
-/src/database/interfaces/business_to_customer.gen.go
-/src/database/interfaces/customer_to_business.gen.go
-/src/database/interfaces/gen.go
-/src/database/interfaces/gorp_migrations.gen.go
-/src/database/interfaces/initiator.gen.go
-/src/database/interfaces/mpesa_express.gen.go
+
+docs/

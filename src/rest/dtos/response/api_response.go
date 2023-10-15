@@ -3,6 +3,7 @@ package response
 import "time"
 
 type ApiResponse struct {
+	HttpStatus      int       `json:"-"`
 	ErrorCode       string    `json:"error_code,omitempty"`
 	ErrorMessage    string    `json:"error_message,omitempty"`
 	TimeStamp       time.Time `json:"time_stamp,omitempty"`

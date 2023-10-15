@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
-	"gorm.io/gen"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"os"
@@ -12,40 +11,8 @@ import (
 	"time"
 )
 
-var Instance *gorm.DB
-
-// GenerateDatabaseStructs if enabled in the configs will generate structs from the database
-func GenerateDatabaseStructs(config Config) error {
-	log.Info("About to create database structs")
-	// Define the output path for the structs and interface configs
-	generate := gen.NewGenerator(gen.Config{
-		OutPath: "./src/database/interfaces",
-		Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface,
-	})
-
-	// obtain connection to run database struct generation, will close conn afterwards
-	// Use existing DB connection to run
-	generate.UseDB(Instance)
-
-	// Command to generate structs for all tables in database
-	generate.ApplyBasic(
-		generate.GenerateAllTable()...,
-	)
-
-	// execute struct generation
-	generate.Execute()
-
-	conn, _ := Instance.DB()
-	err := conn.Close()
-	if err != nil {
-		return err
-	}
-	log.Info("Successfully generated database structs from database tables")
-	return nil
-}
-
 // DatabaseConnectionPool initialize the Database connection pool and setup a pool of connections
-func DatabaseConnectionPool(config Config) (*sql.DB, error) {
+func DatabaseConnectionPool(config Config, db *gorm.DB) (*sql.DB, error) {
 	log.Info("Initializing Database Connection Pool")
 
 	dbMaxIdleConnections := config.Database.MaxIdleConnections
@@ -53,7 +20,7 @@ func DatabaseConnectionPool(config Config) (*sql.DB, error) {
 	dbMaxIdleTime := config.Database.MaxIdleTime
 	dbMaxLifeTime := config.Database.MaxLifeTime
 
-	sqlDb, err := Instance.DB()
+	sqlDb, err := db.DB()
 	sqlDb.SetConnMaxLifetime(time.Duration(dbMaxLifeTime))
 	sqlDb.SetMaxIdleConns(dbMaxIdleConnections)
 	sqlDb.SetMaxOpenConns(dbMaxOpenConnections)
@@ -76,7 +43,7 @@ func DatabaseConnectionPool(config Config) (*sql.DB, error) {
 }
 
 // ConnectToDatabase connects to the Database and returns a single connection
-func ConnectToDatabase(config Config) error {
+func ConnectToDatabase(config Config) (*gorm.DB, error) {
 	dbDsn := GenerateDatabaseDsn(config)
 	db, err := gorm.Open(mysql.New(mysql.Config{
 		DriverName: config.Database.Driver,
@@ -86,12 +53,11 @@ func ConnectToDatabase(config Config) error {
 		PrepareStmt:     true,
 		Logger:          ConfigureDatabaseLogger(),
 	})
-	Instance = db
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %+v", err)
-		return err
+		return nil, err
 	}
-	return nil
+	return db, nil
 }
 
 // GenerateDatabaseDsn used to generate a database dsn URI
