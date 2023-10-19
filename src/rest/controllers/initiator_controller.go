@@ -29,11 +29,12 @@ type initiatorController struct {
 // @Accept       json
 // @Produce      json
 // @Param        data body request.InitiatorRequest true  "initiator"
-// @Success      200  {object}  response.ApiResponse
-// @Failure      400  {object}  response.ApiResponse
-// @Failure      404  {object}  response.ApiResponse
-// @Failure      500  {object}  response.ApiResponse
+// @Success      200
+// @Failure      400
+// @Failure      404
+// @Failure      500
 // @Router       /initiators/create [post]
+// Will need to fix the any datatype response
 func (controller initiatorController) SaveInitiator(ctx *gin.Context) {
 	requestModel := &request.InitiatorRequest{}
 	if err := ctx.ShouldBind(requestModel); err != nil && errors.As(err, &validator.ValidationErrors{}) {

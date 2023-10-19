@@ -31,3 +31,7 @@ build/
 .vscode/
 
 *.gen.go
+
+/docs*/*
+/docs*/
+

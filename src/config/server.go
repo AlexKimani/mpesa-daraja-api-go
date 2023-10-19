@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/swag/example/basic/docs"
 	"gorm.io/gorm"
 	"mpesa-daraja-api-go/src/database/service/impl"
 	"mpesa-daraja-api-go/src/rest/controllers"
@@ -45,10 +46,10 @@ func InitializeServices(engine *gin.Engine, db *gorm.DB) {
 }
 
 func SwaggerSetup(config Config, engine *gin.Engine) {
-	address := "http://" + config.Server.Host + ":" + config.Server.Port + "/swagger/doc.json"
+	address := "http://" + config.Server.Host + ":" + config.Server.Port + "/v3/swagger/docs.json"
 
 	url := ginSwagger.URL(address)
-	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
+	engine.GET("/v3/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 }
 
 // @title			Safaricom Daraja 2.0 Api
@@ -63,11 +64,19 @@ func SwaggerSetup(config Config, engine *gin.Engine) {
 // @license.name	Apache 2.0
 // @license.url		http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host			0.0.0.0:8000
-// @BasePath		/v1/
+// @host			0.0.0.0:8080
+// @BasePath		/v2/
 
 // Run will start the HTTP Server and initiate connection pool
 func (configuration Config) Run() {
+	// programmatically set swagger info
+	docs.SwaggerInfo.Title = "Safaricom Daraja 2.0 Api"
+	docs.SwaggerInfo.Description = "This service is meant to integrate with Safaricom Daraja 2.0 API"
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Host = configuration.Server.Host + ":" + configuration.Server.Port
+	docs.SwaggerInfo.BasePath = "/v2"
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
+
 	// Set up a channel to listen to for interrupt signals
 	var runChannel = make(chan os.Signal, 1)
 
