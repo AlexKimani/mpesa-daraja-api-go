@@ -32,4 +32,6 @@ build/
 
 *.gen.go
 
-docs/
+/docs*/*
+/docs*/
+

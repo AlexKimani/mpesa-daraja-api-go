@@ -87,6 +87,7 @@ func (ifl *initiatorFacade) UpdateInitiator(id int64, initiatorRequest *request.
 		ID:                  id,
 		InitiatorName:       initiatorRequest.InitiatorName,
 		InitiatorCredential: initiatorRequest.InitiatorCredential,
+		CreatedAt:           existingInitiator.CreatedAt,
 	}
 	_, err := ifl.initiator.UpdateInitiator(updateRequest)
 	if err != nil {

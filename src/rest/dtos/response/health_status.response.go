@@ -3,7 +3,7 @@ package response
 type HealthStatusResponse struct {
 	ServerStatus   string `json:"server_status"`
 	DatabaseStatus string `json:"database_status"`
-	DatabaseStats  any
+	DatabaseStats  Stats
 }
 
 type Stats struct {
